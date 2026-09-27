@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bệnh Viện Cấp Cứu - Nurse ER</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --primary: #00b894;
+            --danger: #ff7675;
+            --warning: #fdcb6e;
+            --text: #2d3436;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+        }
+
+        .header-bar {
+            background: #eccc68;
+            padding: 12px 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #2f3542;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Danh sách giường bệnh */
+        .beds-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .bed-card {
+            border: 2px solid #dfe6e9;
+            border-radius: 12px;
+            padding: 10px;
+            background: #f1f2f6;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .bed-card.selected {
+            border-color: var(--primary);
+            background: #e8f8f5;
+        }
+
+        .bed-card.emergency {
+            border-color: var(--danger);
+            animation: blink 1s infinite;
+        }
+
+        .bed-header {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .patient-info {
+            font-size: 12px;
+            color: #636e72;
+            min-height: 36px;
+        }
+
+        .hp-bar {
+            height: 8px;
+            background: #dfe6e9;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .hp-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 100%;
+            transition: width 0.3s;
+        }
+
+        /* Thao tác */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .btn-action {
+            background: #70a1ff;
+            color: white;
+            border: none;
+            padding: 12px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #1e90ff;
+        }
+
+        .btn-action:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #1e90ff;
+        }
+
+        /* Bảng tin nhật ký */
+        .log-box {
+            background: #2f3542;
+            color: #70a1ff;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            height: 90px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+
+        @keyframes blink {
+            0% { border-color: var(--danger); }
+            50% { border-color: transparent; }
+            100% { border-color: var(--danger); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div style="text-align: center; margin-bottom: 10px;">
+        <h2 style="margin: 0; font-size: 20px; color: #2ed573;">🏥 Khoa Cấp Cứu 24/7</h2>
+        <span style="font-size: 12px; color: #747d8c;">Mô phỏng công việc Điều Dưỡng</span>
+    </div>
+
+    <div class="header-bar">
+        <span>💰 Điểm: <span id="money">0</span></span>
+        <span>⚡ Thể lực: <span id="energy">100</span>%</span>
+        <span>⏰ Ca: <span id="shift-time">08:00</span></span>
+    </div>
+
+    <div class="section-title">🛏️ Danh sách giường cấp cứu</div>
+    <div class="beds-container" id="beds"></div>
+
+    <div class="section-title">🩺 Thao tác điều trị (Chọn giường trước)</div>
+    <div class="actions-grid">
+        <button class="btn-action" style="background:#2ed573; box-shadow:0 4px 0 #26af5f;" onclick="handleTreat('talk')">🗣️ Trấn an bệnh nhân</button>
+        <button class="btn-action" style="background:#ff4757; box-shadow:0 4px 0 #d63031;" onclick="handleTreat('blood')">🩸 Cầm máu khẩn cấp</button>
+        <button class="btn-action" style="background:#ffa502; box-shadow:0 4px 0 #e1b12c;" onclick="handleTreat('cpr')">⚡ Ép tim (Code Blue)</button>
+        <button class="btn-action" style="background:#70a1ff; box-shadow:0 4px 0 #1e90ff;" onclick="handleTreat('iv')">💉 Truyền dịch / Tiêm</button>
+    </div>
+
+    <div class="section-title">📜 Nhật ký ca trực</div>
+    <div class="log-box" id="logs">> Ca trực bắt đầu. Đang chờ bệnh nhân...</div>
+</div>
+
+<script>
+    let money = 0;
+    let energy = 100;
+    let selectedBedId = null;
+    let timeMinutes = 8 * 60;
+
+    const dramaList = [
+        { type: 'uncooperative', title: 'Say rượu quậy phá', need: 'talk', speed: 1, text: 'Bệnh nhân chửi mắng, gạt tay tiêm!' },
+        { type: 'bleeding', title: 'Tai nạn mất máu', need: 'blood', speed: 2.5, text: 'Vết thương hở, huyết áp tụt nhanh!' },
+        { type: 'code_blue', title: 'Ngừng tim (CODE BLUE)', need: 'cpr', speed: 4, text: 'Bệnh nhân bất tỉnh, tim ngừng đập!' }
+    ];
+
+    let beds = [
+        { id: 1, patient: null },
+        { id: 2, patient: null },
+        { id: 3, patient: null },
+        { id: 4, patient: null }
+    ];
+
+    function addLog(msg) {
+        const log = document.getElementById('logs');
+        log.innerHTML += `<br>> ${msg}`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    function selectBed(id) {
+        selectedBedId = id;
+        render();
+    }
+
+    function spawnPatient() {
+        const emptyBeds = beds.filter(b => b.patient === null);
+        if (emptyBeds.length === 0) return;
+
+        const randomBed = emptyBeds[Math.floor(Math.random() * emptyBeds.length)];
+        const drama = dramaList[Math.floor(Math.random() * dramaList.length)];
+
+        randomBed.patient = {
+            ...drama,
+            hp: 100
+        };
+        addLog(`🚨 Giường ${randomBed.id}: Tiếp nhận [${drama.title}]!`);
+    }
+
+    function handleTreat(actionType) {
+        if (!selectedBedId) {
+            alert('Vui lòng bấm chọn 1 Giường bệnh trước!');
+            return;
+        }
+
+        const bed = beds.find(b => b.id === selectedBedId);
+        if (!bed || !bed.patient) {
+            addLog(`⚠️ Giường ${selectedBedId} đang trống!`);
+            return;
+        }
+
+        if (energy < 10) {
+            addLog(`❌ Bạn quá mệt, cần nghỉ ngơi!`);
+            return;
+        }
+
+        energy -= 5;
+        const p = bed.patient;
+
+        if (actionType === p.need) {
+            p.hp += 35;
+            if (p.hp >= 100) {
+                addLog(`✅ Giường ${bed.id}: Đã điều trị thành công! (+50$ điểm)`);
+                money += 50;
+                bed.patient = null;
+            } else {
+                addLog(`👍 Giường ${bed.id}: Thao tác đúng! Bệnh nhân đã đỡ hơn.`);
+            }
+        } else {
+            p.hp -= 15;
+            addLog(`❌ Giường ${bed.id}: Thao tác sai cách! Bệnh nhân trở nặng.`);
+        }
+
+        render();
+    }
+
+    function updateGame() {
+        timeMinutes += 1;
+        const h = String(Math.floor(timeMinutes / 60)).padStart(2, '0');
+        const m = String(timeMinutes % 60).padStart(2, '0');
+        document.getElementById('shift-time').innerText = `${h}:${m}`;
+
+        if (Math.random() < 0.3) {
+            spawnPatient();
+        }
+
+        beds.forEach(b => {
+            if (b.patient) {
+                b.patient.hp -= b.patient.speed;
+                if (b.patient.hp <= 0) {
+                    addLog(`☠️ Giường ${b.id}: Bệnh nhân tử vong do xử lý chậm! (-100$)`);
+                    money = Math.max(0, money - 100);
+                    b.patient = null;
+                }
+            }
+        });
+
+        if (energy < 100) energy += 1;
+
+        render();
+    }
+
+    function render() {
+        document.getElementById('money').innerText = money;
+        document.getElementById('energy').innerText = Math.floor(energy);
+
+        const container = document.getElementById('beds');
+        container.innerHTML = '';
+
+        beds.forEach(b => {
+            const isSelected = selectedBedId === b.id;
+            const hasPatient = b.patient !== null;
+            const isEmergency = hasPatient && b.patient.hp < 40;
+
+            const div = document.createElement('div');
+            div.className = `bed-card ${isSelected ? 'selected' : ''} ${isEmergency ? 'emergency' : ''}`;
+            div.onclick = () => selectBed(b.id);
+
+            if (hasPatient) {
+                div.innerHTML = `
+                    <div class="bed-header">🛏️ Giường ${b.id}</div>
+                    <div class="patient-info"><b>${b.patient.title}</b><br><span style="font-size:10px;">${b.patient.text}</span></div>
+                    <div class="hp-bar">
+                        <div class="hp-fill" style="width: ${Math.max(0, b.patient.hp)}%; background: ${b.patient.hp < 40 ? '#ff7675' : '#00b894'};"></div>
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="bed-header">🛏️ Giường ${b.id}</div>
+                    <div class="patient-info" style="color:#b2bec3;"><br>(Giường trống)</div>
+                    <div class="hp-bar"><div class="hp-fill" style="width: 0%;"></div></div>
+                `;
+            }
+            container.appendChild(div);
+        });
+    }
+
+    setInterval(updateGame, 1500);
+    render();
+</script>
+</body>
+</html>
